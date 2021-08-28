@@ -1,0 +1,202 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include "mbedtls/md.h"
+#include <Preferences.h> // Preferences Library
+#include <nvs_flash.h>
+#include "ShaLib.h"
+
+Preferences devPreferences;
+ShaLib shalib;
+
+String projStr = "SURESH";
+String ssidStr = "ashwin_hall";
+String passStr = "ashwin691";
+String serialNumberStr = "11O9190001";
+String activationCodeStr = "ED25843042";
+String awsCodeStr = "DID-5DA5E7C14766";
+String mobCodeStr = "DKY-8757D8A728B1";
+
+void setup()
+{
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+
+  //Random number between 10000000 to 99999999
+  long randomLong = random(1000000, 99999999);
+  char randomChar[9];
+  String randomStr = ltoa(randomLong, randomChar, 10);
+  // Serial.println("Random = " + randomStr);
+  //Get Mac ID
+  String macID = WiFi.macAddress();
+
+  //Get CODE_NUMBER_1 with serialNumberStr, activationCodeStr,macId,random Number
+  //Get CODE_NUMBER_1 with serialNumberStr, activationCodeStr,awsCode,random Number
+  //Get CODE_NUMBER_1 with serialNumberStr, activationCodeStr,mobileCode,random Number
+  String shaMacRanCode = shalib.getDigest(serialNumberStr, activationCodeStr, macID, randomStr, "34");
+  String shaAwsRanCode = shalib.getDigest(serialNumberStr, activationCodeStr, awsCodeStr, randomStr, "34");
+  String shaMobRanCode = shalib.getDigest(serialNumberStr, activationCodeStr, mobCodeStr, randomStr, "34");
+  String shaAwsMaccode = shalib.getDigest(serialNumberStr, activationCodeStr, awsCodeStr, macID, "34");
+  String shaMobMacCode = shalib.getDigest(serialNumberStr, activationCodeStr, mobCodeStr, macID, "34");
+  String shaDigest = shaMacRanCode + shaAwsRanCode + shaMobRanCode + shaAwsMaccode + shaMobMacCode;
+  // Serial.println("BEFORE_SAVE_BEFORE_CODEING = " + shaDigest);
+  //Get random step
+  long step = random(3, 7);
+  char stepChar[2];
+  String stepStr = ltoa(step, stepChar, 10);
+  // Serial.println("Step = " + stepStr);
+  //Encode
+  int pos = 3; //Step Position
+  //Encode step
+  shaDigest[pos] = stepStr[0];
+  //Encode random
+  for (int x = 0; x < 8; x++)
+  {
+    pos = pos + step;
+    shaDigest[pos] = randomStr[x];
+  }
+  for (int x = 0; x < 12; x++)
+  {
+    pos = pos + step;
+    shaDigest[pos] = awsCodeStr[x + 4];
+    pos = pos + step;
+    shaDigest[pos] = mobCodeStr[x + 4];
+  }
+  Serial.println("BEFORE_SAVE_AFTER _CODEING = " + shaDigest);
+
+  /* Clear all memory */
+  nvs_flash_erase();                              // erase the NVS partition and...
+  nvs_flash_init();                               // initialize the NVS partition.
+  devPreferences.begin("sureshkaval@100", false); //create Partion
+  devPreferences.clear();                         //Clear partion
+  /* TESTING if Partion is erased!!! */
+  // Serial.println("BEFORE Project from memory = " + devPreferences.getString("project"));
+  // Serial.println("BEFORE Serial Number from memory = " + devPreferences.getString("serialNumber"));
+  // Serial.println("BEFORE Activation Code from memory = " + devPreferences.getString("activationCode"));
+  // Serial.println("BEFORE SSID from memory = " + devPreferences.getString("ssid"));
+  // Serial.println("BEFORE PASSWORD from memory = " + devPreferences.getString("pass"));
+  // Serial.println("BEFORE SHA Digest loaded from Memory = " + devPreferences.getString("securityCode"));
+  devPreferences.putString("project", projStr);
+  delay(100);
+  devPreferences.putString("serialNumber", serialNumberStr);
+  delay(100);
+  devPreferences.putString("activationCode", activationCodeStr);
+  delay(100);
+  devPreferences.putString("ssid", ssidStr);
+  delay(100);
+  devPreferences.putString("pass", passStr);
+  delay(100);
+  char securityChar[shaDigest.length() + 1];
+  shaDigest.toCharArray(securityChar, shaDigest.length() + 1);
+  devPreferences.putString("securityCode", securityChar);
+  delay(100);
+  devPreferences.end();
+
+  /*==========================================================================Start*/
+  // initialize
+  String devSerialNumberStr = "";
+  String devActivationCodeStr = "";
+  String devAwsCodeStr = "";
+  String devMobCodeStr = "";
+  String devShaDigest = "";
+  int devStep = 0;
+  String devRandomStr = "";
+  String devMacId = WiFi.macAddress();
+  ;
+
+  Preferences devLoadPreferences;
+  devLoadPreferences.begin("sureshkaval@100", false); //create Partion
+  devSerialNumberStr = devLoadPreferences.getString("serialNumber");
+  devActivationCodeStr = devLoadPreferences.getString("activationCode");
+  devShaDigest = devLoadPreferences.getString("securityCode");
+  // Serial.println("SHA Digest loaded from Memory = " + devShaDigest);
+
+  // //Get Step
+  // char devStepChar = devShaDigest[3];
+  // devStep = devStepChar - 48;
+  // //Get random string
+
+  // int devPos = 3;
+  // for(int x =0; x < 8; x++) {
+  //   devPos = devPos + devStep;
+  //   devRandomStr = devRandomStr + devShaDigest[devPos];
+  // }
+  // //Get AWS and Mobile Codes
+  // for(int x =0; x < 12; x++) {
+  //   devPos = devPos + devStep;
+  //   devAwsCodeStr = devAwsCodeStr + devShaDigest[devPos];
+  //   devPos = devPos + devStep;
+  //   devMobCodeStr = devMobCodeStr + devShaDigest[devPos];
+  // }
+
+  shalib.getRanAwsMod(devShaDigest, devStep, devRandomStr, devAwsCodeStr, devMobCodeStr);
+  devAwsCodeStr = "DID-" + devAwsCodeStr;
+  devMobCodeStr = "DKY-" + devMobCodeStr;
+  // Serial.println("Serial Number    from memory = " + devSerialNumberStr);
+  // Serial.println("Activation Code  from memory = " + devActivationCodeStr);
+  Serial.println("AWS Code decoded from memory = " + devAwsCodeStr);
+  Serial.println("Mob Code decoded from memory = " + devMobCodeStr);
+  Serial.println("Random decoded from Memory   = " + devRandomStr);
+  // Serial.print("devStep = "); Serial.println(devStep);
+
+  //Recreate the CODED SHA Digest
+
+  String newShaMacRanCode = shalib.getDigest(devSerialNumberStr, devActivationCodeStr, devMacId, devRandomStr, "34");
+  String newShaAwsRanCode = shalib.getDigest(devSerialNumberStr, devActivationCodeStr, devAwsCodeStr, devRandomStr, "34");
+  String newShaMobRanCode = shalib.getDigest(devSerialNumberStr, devActivationCodeStr, devMobCodeStr, devRandomStr, "34");
+  String newShaAwsMaccode = shalib.getDigest(devSerialNumberStr, devActivationCodeStr, devAwsCodeStr, devMacId, "34");
+  String newShaMobMacCode = shalib.getDigest(devSerialNumberStr, devActivationCodeStr, devMobCodeStr, devMacId, "34");
+  String newShaDigest = newShaMacRanCode + newShaAwsRanCode + newShaMobRanCode + newShaAwsMaccode + newShaMobMacCode;
+
+  // Serial.println("AFTER _SAVE_BEFORE_CODEING = " + newShaDigest);
+  //Get random step
+  char newStepChar[2];
+  String newStepStr = ltoa(devStep, newStepChar, 10);
+  // Serial.println("New Step = " + newStepStr);
+  //Encode
+  int newPos = 3; //Step Position
+  //Encode step
+  newShaDigest[newPos] = newStepStr[0];
+  //Encode random
+  for (int x = 0; x < 8; x++)
+  {
+    newPos = newPos + devStep;
+    newShaDigest[newPos] = devRandomStr[x];
+  }
+  for (int x = 0; x < 12; x++)
+  {
+    newPos = newPos + devStep;
+    newShaDigest[newPos] = devAwsCodeStr[x + 4];
+    newPos = newPos + devStep;
+    newShaDigest[newPos] = devMobCodeStr[x + 4];
+  }
+  Serial.println("AFTER _SAVE_AFTER _CODEING = " + newShaDigest);
+
+  if (devShaDigest.length() == newShaDigest.length())
+  {
+    if (devShaDigest.equals(newShaDigest))
+    {
+    }
+    else
+    {
+      devAwsCodeStr = "NOTVALIDAWSCODE";
+      devMobCodeStr = "NOTVALIDMOBCODE";
+    }
+  }
+  else
+  {
+    devAwsCodeStr = "NOTVALIDAWSCODELEN";
+    devMobCodeStr = "NOTVALIDMOBCODELEN";
+  }
+
+  Serial.println("SERIAL NUMBER   = " + devSerialNumberStr);
+  Serial.println("ACTIVATION CODE = " + devActivationCodeStr);
+  Serial.println("AWS CODE        = " + devAwsCodeStr);
+  Serial.println("MOB CODe        = " + devMobCodeStr);
+
+  /*==========================================================================END*/
+}
+
+void loop()
+{
+  // put your main code here, to run repeatedly:
+}
