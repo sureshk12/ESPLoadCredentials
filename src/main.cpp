@@ -194,18 +194,18 @@ void setup()
   delay(100);
   devPreferences.putString("activationCode", activationCodeStr);
   delay(100);
-  devPreferences.putString("awsCode", awsCodeStr);
-  delay(100);
-  devPreferences.putString("mobCode", mobCodeStr);
-  delay(100);
+  // devPreferences.putString("awsCode", awsCodeStr);
+  // delay(100);
+  // devPreferences.putString("mobCode", mobCodeStr);
+  // delay(100);
   devPreferences.putString("securityCode", securityStr);
   delay(100);
   devPreferences.end();
 
   Serial.println("SERIAL NUMBER   = " + serialNumberStr);
   Serial.println("ACTIVATION CODE = " + activationCodeStr);
-  Serial.println("AWS CODE        = " + awsCodeStr);
-  Serial.println("MOB CODE        = " + mobCodeStr);
+  // Serial.println("AWS CODE        = " + awsCodeStr);
+  // Serial.println("MOB CODE        = " + mobCodeStr);
   Serial.println("SECURITY CODE   = " + securityStr);
 }
 
