@@ -10,7 +10,7 @@ HTTPClient httpClient;
 int ledPin = 2;
 
 //String host = "http://192.168.1.8/Esp32Initialize/initializeEspAudio?macId=";
-String host = "http://192.168.2.3:8080/OnidaAuDataV0L/newThingSevlet?mac=";
+String host = "http://192.168.2.5:8080/OnidaAuDataV0L/newThingSevlet?mac=";
 //String host = "http://192.168.0.105:8080/OnidaAuDataV0L/newThingSevlet?mac=";
 
 String projStr = "SURESH";
@@ -177,12 +177,12 @@ void setup()
   //Clear partion
   /* TESTING if Partion is erased!!! */
 
-  Serial.println("BEFORE Project from memory = " + devPreferences.getString("project"));
-  Serial.println("BEFORE Serial Number from memory = " + devPreferences.getString("serialNumber"));
-  Serial.println("BEFORE Activation Code from memory = " + devPreferences.getString("activationCode"));
-  Serial.println("BEFORE SSID from memory = " + devPreferences.getString("ssid"));
-  Serial.println("BEFORE PASSWORD from memory = " + devPreferences.getString("pass"));
-  Serial.println("BEFORE SHA Digest loaded from Memory = " + devPreferences.getString("securityCode"));
+  // Serial.println("BEFORE Project from memory = " + devPreferences.getString("project"));
+  // Serial.println("BEFORE Serial Number from memory = " + devPreferences.getString("serialNumber"));
+  // Serial.println("BEFORE Activation Code from memory = " + devPreferences.getString("activationCode"));
+  // Serial.println("BEFORE SSID from memory = " + devPreferences.getString("ssid"));
+  // Serial.println("BEFORE PASSWORD from memory = " + devPreferences.getString("pass"));
+  // Serial.println("BEFORE SHA Digest loaded from Memory = " + devPreferences.getString("securityCode"));
 
   devPreferences.putString("project", projStr);
   delay(100);
@@ -199,6 +199,8 @@ void setup()
   // devPreferences.putString("mobCode", mobCodeStr);
   // delay(100);
   devPreferences.putString("securityCode", securityStr);
+  delay(100);
+  devPreferences.putString("version", "000000");
   delay(100);
   devPreferences.end();
 
